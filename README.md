@@ -23,15 +23,15 @@ El análisis del error intraobservador en el relevamiento de las variables morfo
 ## 📂 Estructura del repositorio
 
 📁 Analisis_Morfometrico/
-├── 📄 Analisis_Intraobservador.R # Script principal en R con todo el flujo analítico
-├── 📊 resultados_pruebas_intraobservador_completo.csv
-├── 📊 resultados_posthoc_intraobservador.csv
-├── 📊 estadisticas_descriptivas.csv
-├── 📊 shapiro_diferencias_por_variable.csv
-├── 📈 CV_promedio_top40.png # Gráfico de coeficiente de variación
-├── 📈 ICC_por_variable.png # Gráfico de fiabilidad (ICC)
-├── 📁 Boxplots_Variables/ # Boxplots individuales por variable y toma
-└── 📄 README.md # Descripción del proyecto (este archivo)
+├── Analisis_Intraobservador.R           # Script principal en R
+├── resultados_pruebas_intraobservador_completo.csv
+├── resultados_posthoc_intraobservador.csv
+├── estadisticas_descriptivas.csv
+├── shapiro_diferencias_por_variable.csv
+├── CV_promedio.png                      # Gráfico CV
+├── ICC_por_variable.png                 # Gráfico ICC
+├── Boxplots_Variables/                  # Boxplots individuales
+└── README.md                            # Descripción del proyecto
 
 ## 🧠 Metodología estadística
 
