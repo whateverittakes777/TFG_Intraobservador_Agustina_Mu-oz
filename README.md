@@ -74,6 +74,13 @@ Instalación rápida:
 install.packages(c("tidyverse", "readxl", "irr", "psych", "skimr",
                    "rstatix", "flextable", "ggplot2", "scales",
                    "progress", "gt", "ggpubr"))
+## 🚀 Ejecución
+
+1. Clonar el repositorio:
+   ```bash
+   git clone https://github.com/whateverittakes777/TFG_Intraobservador_Agustina_Mu-oz.git
+
+
 🧾 Licencia
 Este trabajo se distribuye bajo la licencia Creative Commons Atribución-NoComercial 4.0 Internacional (CC BY-NC 4.0).
 Esto significa que cualquier persona puede compartir y adaptar el material, siempre que se otorgue el crédito correspondiente y no se utilice con fines comerciales.
