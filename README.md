@@ -14,7 +14,7 @@
 
 Este repositorio acompaña el Trabajo Final de Grado titulado **“Morfometría tradicional y fotogrametría de corto alcance: validación metodológica para el análisis osteométrico en restos óseos humanos de Norpatagonia”**.
 
-El objetivo principal del estudio es evaluar y comparan dos formas de registro de variables métricas, las medidas morfométricas tomadas de manera analógica y las mismas medidas tomadas de manera digital, a partir de su modelo tridimensional. Todo el relevamiento se desarrolla en una muestra esquelética contemporánea perteneciente a la Colección Osteológica de referencia Norpatagonica (CORN, Vázquez et al., 2025), de modo que paralelamente se genere un repositorio digital de la colección. Los análisis se realizaron bajo un enfoque estadístico reproducible implementado en **R**.
+El objetivo principal del estudio es evaluar y comparan dos formas de registro de variables métricas, las medidas morfométricas tomadas de manera analógica y las mismas medidas tomadas de manera digital, a partir de su modelo tridimensional. Todo el relevamiento se desarrolla en una muestra esquelética contemporánea perteneciente a la Colección Osteológica de referencia Norpatagonica, de modo que paralelamente se genere un repositorio digital de la colección. Los análisis se realizaron bajo un enfoque estadístico reproducible implementado en **R**.
 
 El análisis del error intraobservador en el relevamiento de las variables morfométricas incluye el análisis de consistencia de medidas, pruebas de normalidad, ANOVA/Friedman, tamaño del efecto, coeficiente de correlación intraclase (ICC) y visualizaciones gráficas.
 
