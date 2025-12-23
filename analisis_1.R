@@ -257,10 +257,26 @@ posthoc_final <- bind_rows(posthoc_resultados) %>%
 write.csv(posthoc_final, "resultados_posthoc_intraobservador.csv", row.names = FALSE)
 
 # -----------------------------------------------------------
-# 10. TABLA FINAL (GT)
-# -----------------------------------------------------------
+# --- Calcular CV intraobservador ---
+cv_intra <- datos_largo %>%
+  group_by(Variable, IND) %>%
+  summarise(
+    media_ind = mean(Valor, na.rm = TRUE),
+    sd_ind = sd(Valor, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(CV_ind = (sd_ind / media_ind) * 100) %>%
+  group_by(Variable) %>%
+  summarise(
+    CV_intra_mean = mean(CV_ind, na.rm = TRUE),
+    CV_intra_sd = sd(CV_ind, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
 
-tabla_intra <- resultados_pruebas %>%
+# ---  Unir resultados ICC + pruebas + CV intraobservador ---
+resultados_final <- resultados_pruebas %>%
+  left_join(cv_intra %>% select(Variable, CV_intra_mean), by = "Variable") %>%
   mutate(
     p_valor = ifelse(p_valor < 0.001, "<0.001", as.character(round(p_valor, 3))),
     Interpretacion_ICC = case_when(
@@ -268,12 +284,21 @@ tabla_intra <- resultados_pruebas %>%
       ICC < 0.75 ~ "Fiabilidad moderada",
       ICC < 0.9  ~ "Fiabilidad buena",
       ICC >= 0.9 ~ "Fiabilidad excelente"
+    ),
+    Categoria_CV = case_when(
+      CV_intra_mean <= 5 ~ "Excelente",
+      CV_intra_mean <= 10 ~ "Buena",
+      CV_intra_mean <= 15 ~ "Moderada",
+      TRUE ~ "Baja"
     )
-  ) %>%
+  )
+
+# ---  Crear tabla GT ---
+tabla_intra <- resultados_final %>%
   gt() %>%
   tab_header(
     title = md("**Resumen del análisis intraobservador**"),
-    subtitle = md("_Tipo de prueba, significancia, tamaño del efecto e ICC_")
+    subtitle = md("_Tipo de prueba, significancia, tamaño del efecto, ICC y CV intraobservador_")
   ) %>%
   cols_label(
     Variable = "Variable",
@@ -283,7 +308,13 @@ tabla_intra <- resultados_pruebas %>%
     Medida = "Medida",
     Interpretación = "Interpretación del efecto",
     ICC = "ICC",
-    Interpretacion_ICC = "Interpretación ICC"
+    Interpretacion_ICC = "Interpretación ICC",
+    CV_intra_mean = "CV intraobservador (%)",
+    Categoria_CV = "Categoría CV"
+  ) %>%
+  fmt_number(
+    columns = c(Tamaño_Efecto, ICC, CV_intra_mean),
+    decimals = 3
   ) %>%
   tab_options(
     table.font.size = px(11),
@@ -291,36 +322,40 @@ tabla_intra <- resultados_pruebas %>%
     column_labels.font.weight = "bold"
   )
 
+# ---  Exportar ---
 tabla_intra
+gtsave(tabla_intra, "tabla_intra.docx")
 
-# -----------------------------------------------------------
-# 11. GRÁFICOS DE RESULTADOS
-# -----------------------------------------------------------
+# Confirmación
+print("✅Tabla final 'tabla_intra.docx' creada con ICC + CV intraobservador + pruebas estadísticas.")
 
-# --- 8.1 CV promedio ---
-cv_promedio <- estadisticas_desc %>%
-  group_by(Variable) %>%
-  summarise(CV_promedio = mean(CV_pct, na.rm = TRUE), .groups = "drop")
+#-----------------------------------------------
+#  11. GRÁFICOS DE RESULTADOS 
 
-p_cv <- ggplot(cv_promedio %>% top_n(40, CV_promedio),
-               aes(x = reorder(Variable, CV_promedio), y = CV_promedio, fill = CV_promedio)) +
-  geom_col(width = 0.7, color = "white") +
+# --- 11.1 CV INTRAOBSERVADOR POR VARIABLE ---
+
+p_cv_intra <- ggplot(cv_intra, aes(x = reorder(Variable, CV_intra_mean), y = CV_intra_mean)) +
+  geom_col(fill = "#a8dadc") +
   coord_flip() +
-  scale_fill_gradient(low = "#d0e6f3", high = "#f4c2c2") +
-  geom_text(aes(label = paste0(round(CV_promedio, 1), "%")), hjust = -0.05, size = 3) +
-  labs(title = "Coeficiente de variación promedio (CV%) por variable",
-       subtitle = "Evaluación de la variabilidad intraobservador",
-       x = "Variable morfométrica", y = "CV (%)") +
+  geom_hline(yintercept = 10, linetype = "dashed", color = "red") +
+  labs(
+    title = "Coeficiente de variación intraobservador (CV%) por variable",
+    subtitle = "Promedio entre las tres tomas por individuo — Línea roja = umbral del 10%",
+    x = "Variable morfométrica", y = "CV intraobservador (%)"
+  ) +
   theme_minimal(base_size = 10) +
-  theme(plot.title = element_text(face = "bold", hjust = 0.5),
-        panel.grid.major.y = element_blank(),
-        legend.position = "none")
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    panel.grid.major.y = element_blank(),
+    legend.position = "none"
+  )
 
-ggsave("CV_promedio_top40.png", p_cv, width = 8, height = 10, dpi = 300)
-print(p_cv)
+ggsave("CV_intraobservador_variables.png", p_cv_intra, width = 8, height = 10, dpi = 300)
+print(p_cv_intra)
 
-# --- 8.2 ICC por variable ---
-icc_data <- resultados_pruebas %>%
+
+# --- 11.2 ICC POR VARIABLE ---
+icc_data <- resultados_final %>%
   mutate(
     Interpretacion_ICC = case_when(
       ICC < 0.5  ~ "Fiabilidad pobre",
@@ -340,14 +375,19 @@ p_icc <- ggplot(icc_data, aes(x = reorder(Variable, ICC), y = ICC, color = Inter
     "Fiabilidad buena" = "#457b9d",
     "Fiabilidad excelente" = "#2a9d8f"
   )) +
-  labs(title = "ICC por variable morfométrica",
-       y = "ICC", x = "Variable", color = "Fiabilidad") +
-  theme_minimal(base_size = 10)
+  labs(
+    title = "ICC por variable morfométrica",
+    subtitle = "Clasificación de la fiabilidad según valores de ICC",
+    y = "ICC", x = "Variable", color = "Fiabilidad"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
 
 ggsave("ICC_variables.png", p_icc, width = 8, height = 10, dpi = 300)
 print(p_icc)
 
-# --- 8.3 Boxplots individuales (guardar PNG) ---
+
+# --- 11.3 BOXPLOTS INDIVIDUALES ---
 dir.create("Boxplots_Variables", showWarnings = FALSE)
 for (v in unique(datos_largo$Variable)) {
   dfv <- datos_largo %>% filter(Variable == v)
@@ -355,13 +395,16 @@ for (v in unique(datos_largo$Variable)) {
     geom_boxplot(outlier.colour = "#E07A5F", width = 0.7) +
     labs(title = paste("Boxplot —", v), x = "Toma", y = "Valor") +
     theme_minimal(base_size = 10) +
-    theme(legend.position = "none",
-          plot.title = element_text(face = "bold"))
+    theme(
+      legend.position = "none",
+      plot.title = element_text(face = "bold")
+    )
   ggsave(paste0("Boxplots_Variables/", v, "_boxplot.png"), p_box, width = 5, height = 4, dpi = 300)
 }
 
+
 # -----------------------------------------------------------
-# 9. VISUALIZACIÓN INTERACTIVA (SHINY)
+#  VISUALIZACIÓN INTERACTIVA (SHINY)
 # -----------------------------------------------------------
 
 ui <- fluidPage(
@@ -380,6 +423,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
+  # --- Boxplot interactivo por variable ---
   output$boxplot_var <- renderPlot({
     dfv <- datos_largo %>% filter(Variable == input$var_select)
     ggplot(dfv, aes(x = toma, y = Valor, fill = toma)) +
@@ -389,13 +433,16 @@ server <- function(input, output) {
       theme_minimal(base_size = 12) +
       theme(legend.position = "none")
   })
-  output$cv_plot <- renderPlot({ p_cv })
+  
+  # --- CV Intraobservador (gráfico global) ---
+  output$cv_plot <- renderPlot({ p_cv_intra })
+  
+  # --- ICC por variable (gráfico global) ---
   output$icc_plot <- renderPlot({ p_icc })
 }
 
 # Ejecutar panel interactivo (opcional)
 shinyApp(ui, server)
-
 # -----------------------------------------------------------
 # 12. TABLA DE ESTADÍSTICAS DESCRIPTIVAS (GT)
 # -----------------------------------------------------------
@@ -497,3 +544,5 @@ p_posthoc <- ggplot(posthoc_plot_data,
   )
 print(p_posthoc)
 ggsave("PostHoc_significativas.png", p_posthoc, width = 7, height = 5, dpi = 300)
+
+
